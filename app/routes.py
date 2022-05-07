@@ -16,13 +16,21 @@ def validate_task(task_id):
 @tasks_bp.route("", methods=["POST"])
 def handle_tasks_post():
     request_body = request.get_json()
-    new_task = Task(title=request_body["title"],
+    try:
+        new_task = Task(title=request_body["title"],
         description=request_body["description"],
         )
-
+    except:
+        abort(make_response({"details":"Invalid data"}, 400))
     db.session.add(new_task)
     db.session.commit()
-    return make_response(f"Task {new_task.title} successfully created", 201)
+    return make_response(jsonify({ "task": {
+            "id": new_task.task_id,
+            "title": new_task.title,
+            "description": new_task.description,
+            "is_complete": new_task.is_complete
+        }
+    }), 201)
 
 @tasks_bp.route("", methods=["GET"])
 def handle_tasks():
@@ -58,17 +66,21 @@ def individual_task(task_id):
 #can add 'PATCH' after 'PUT'? 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
-    task = validate_task(task_id)
-
+    #task = validate_task(task_id)
+    task = Task.query.get(task_id)
     request_body = request.get_json()
 
-    task.task_name=request_body["task_name"]
+    task.title=request_body["title"]
     task.description=request_body["description"]
-    task.distance_mil_miles=request_body["distance_mil_miles"]
 
     db.session.commit()
-    return make_response(f"task #{task.id} successfully updated")
-
+    return make_response(jsonify({ "task": {
+            "id": task.task_id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": task.is_complete
+        }
+    }), 200)
 
 @tasks_bp.route("/<task_id>", methods=["DELETE"])
 def delete_task(task_id):
@@ -77,4 +89,4 @@ def delete_task(task_id):
     db.session.delete(task)
     db.session.commit()
 
-    return make_response(f"task #{task.task_id} successfully deleted")
+    return make_response({"details": f'Task {task_id} "{task.title}" successfully deleted'})
