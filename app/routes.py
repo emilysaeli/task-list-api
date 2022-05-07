@@ -54,6 +54,10 @@ def handle_tasks():
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
 def individual_task(task_id):
+    try:
+        validate_task(task_id)
+    except:
+        abort(make_response({"details":"Invalid data"}, 404))
     task = Task.query.get(task_id)
     return { "task": {
             "id": task.task_id,
@@ -66,7 +70,11 @@ def individual_task(task_id):
 #can add 'PATCH' after 'PUT'? 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
-    #task = validate_task(task_id)
+    #this seems like a good place to refactor
+    try:
+        validate_task(task_id)
+    except: 
+        abort(make_response({"details":"Invalid data"}, 404))
     task = Task.query.get(task_id)
     request_body = request.get_json()
 
@@ -84,6 +92,10 @@ def update_task(task_id):
 
 @tasks_bp.route("/<task_id>", methods=["DELETE"])
 def delete_task(task_id):
+    try:
+        validate_task(task_id)
+    except: 
+        abort(make_response({"details":"Invalid data"}, 404))
     task = validate_task(task_id)
 
     db.session.delete(task)
