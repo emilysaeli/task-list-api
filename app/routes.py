@@ -33,7 +33,7 @@ def handle_tasks_post():
             "id": new_task.task_id,
             "title": new_task.title,
             "description": new_task.description,
-            "is_complete": new_task.is_complete,
+            "is_complete": True,
             }
         }), 201)
     except:
