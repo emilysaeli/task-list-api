@@ -2,11 +2,11 @@ import unittest
 from unittest.mock import Mock, patch
 from datetime import datetime
 from app.models.task import Task
+
 import pytest
-
-
-
 def test_mark_complete_on_incomplete_task(client, one_task):
+
+
     # Arrange
     """
     The future Wave 4 adds special functionality to this route,
@@ -148,9 +148,9 @@ def test_mark_incomplete_missing_task(client):
 
 
 # Let's add this test for creating tasks, now that
-# the completion functionality has been implemented
+# the completion functionality has been implementeddef test_create_task_with_valid_completed_at(client):
+
 #@pytest.mark.skip(reason="No way to test this feature yet")
-def test_create_task_with_valid_completed_at(client):
     # Act
     response = client.post("/tasks", json={
         "title": "A Brand New Task",

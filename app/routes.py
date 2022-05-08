@@ -2,6 +2,7 @@ from app import db
 from app.models.task import Task
 from flask import Blueprint, jsonify, make_response, request, abort
 from sqlalchemy import desc
+from datetime import datetime
 
 tasks_bp = Blueprint("tasks_blueprint", __name__, url_prefix="/tasks")
 def validate_task(task_id):
@@ -23,15 +24,28 @@ def handle_tasks_post():
         )
     except:
         abort(make_response({"details":"Invalid data"}, 400))
-    db.session.add(new_task)
-    db.session.commit()
-    return make_response(jsonify({ "task": {
+    try:
+        new_task= Task(completed_at=request_body["completed_at"],title=request_body["title"],
+        description=request_body["description"])
+        db.session.add(new_task)
+        db.session.commit()
+        return make_response(jsonify({ "task": {
+            "id": new_task.task_id,
+            "title": new_task.title,
+            "description": new_task.description,
+            "is_complete": new_task.is_complete,
+            }
+        }), 201)
+    except:
+        db.session.add(new_task)
+        db.session.commit()
+        return make_response(jsonify({ "task": {
             "id": new_task.task_id,
             "title": new_task.title,
             "description": new_task.description,
             "is_complete": new_task.is_complete
-        }
-    }), 201)
+            }
+        }), 201)
 
 @tasks_bp.route("", methods=["GET"])
 def handle_tasks():
@@ -77,22 +91,79 @@ def individual_task(task_id):
         }
     }
 
-#can add 'PATCH' after 'PUT'? 
-@tasks_bp.route("/<task_id>", methods=["PUT", "PATCH"])
+
+@tasks_bp.route("/<task_id>", methods=["PUT"])
 def update_task(task_id):
-    #this seems like a good place to refactor
     try:
         validate_task(task_id)
     except: 
         abort(make_response({"details":"Invalid data"}, 404))
     task = Task.query.get(task_id)
     request_body = request.get_json()
+    try:
+        task.completed_at =request_body["completed_at"]
+        task.title=request_body["title"]
+        task.description=request_body["description"]
 
-    task.title=request_body["title"]
-    task.description=request_body["description"]
+        db.session.commit()
+        return make_response(jsonify({ "task": {
+                "id": task.task_id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": True
+            }
+        }), 200)
+
+    except:
+        task.title=request_body["title"]
+        task.description=request_body["description"]
+
+        db.session.commit()
+        return make_response(jsonify({ "task": {
+                "id": task.task_id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete
+            }
+        }), 200)
+        
+@tasks_bp.route("/<task_id>/mark_incomplete", methods=["PATCH"])
+def mark_task_incomplete(task_id):
+    #this seems like a good place to refactor
+    try:
+        validate_task(task_id)
+    except: 
+        abort(make_response({"details":"Invalid data"}, 404))
+    task = Task.query.get(task_id)
+
+    task.is_complete=False
+    task.completed_at=None
 
     db.session.commit()
-    return make_response(jsonify({ "task": {
+    return make_response(jsonify({
+        "task": {
+            "id": task.task_id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": task.is_complete
+        }
+    }), 200)
+
+@tasks_bp.route("/<task_id>/mark_complete", methods=["PATCH"])
+def mark_task_complete(task_id):
+    #this seems like a good place to refactor
+    try:
+        validate_task(task_id)
+    except: 
+        abort(make_response({"details":"Invalid data"}, 404))
+    task = Task.query.get(task_id)
+
+    task.is_complete=True
+    task.completed_at= datetime.utcnow()
+
+    db.session.commit()
+    return make_response(jsonify({
+        "task": {
             "id": task.task_id,
             "title": task.title,
             "description": task.description,
