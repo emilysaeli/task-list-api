@@ -1,6 +1,7 @@
 from app import db
 from app.models.task import Task
 from flask import Blueprint, jsonify, make_response, request, abort
+from sqlalchemy import desc
 
 tasks_bp = Blueprint("tasks_blueprint", __name__, url_prefix="/tasks")
 def validate_task(task_id):
@@ -38,6 +39,15 @@ def handle_tasks():
     if "title" in params:
         task_name_value = params["title"]
         tasks = Task.query.filter_by(title=task_name_value)
+    elif "sort" in params:
+        sort_type = params["sort"]
+        if sort_type == "desc":
+            tasks = Task.query.order_by(desc(Task.title))
+        elif sort_type == "asc":
+            tasks = Task.query.order_by(Task.title)
+        else:
+            return make_response({"details":"Invalid data"}, 400)
+
     else:
         tasks = Task.query.all()
         
@@ -68,7 +78,7 @@ def individual_task(task_id):
     }
 
 #can add 'PATCH' after 'PUT'? 
-@tasks_bp.route("/<task_id>", methods=["PUT"])
+@tasks_bp.route("/<task_id>", methods=["PUT", "PATCH"])
 def update_task(task_id):
     #this seems like a good place to refactor
     try:
