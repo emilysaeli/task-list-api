@@ -3,6 +3,7 @@ from app.models.task import Task
 from flask import Blueprint, jsonify, make_response, request, abort
 from sqlalchemy import desc
 from datetime import datetime
+from .requests import use_header
 
 tasks_bp = Blueprint("tasks_blueprint", __name__, url_prefix="/tasks")
 def validate_task(task_id):
@@ -140,6 +141,8 @@ def mark_task_incomplete(task_id):
     task.completed_at=None
 
     db.session.commit()
+
+
     return make_response(jsonify({
         "task": {
             "id": task.task_id,
@@ -162,14 +165,22 @@ def mark_task_complete(task_id):
     task.completed_at= datetime.utcnow()
 
     db.session.commit()
-    return make_response(jsonify({
-        "task": {
-            "id": task.task_id,
-            "title": task.title,
-            "description": task.description,
-            "is_complete": task.is_complete
-        }
-    }), 200)
+
+        #calling Slack API
+    slack_text = f"Someone just completed the task {task.title}"
+    slack_call = use_header(slack_text)
+    if slack_call == 200:
+        return make_response(jsonify({
+            "task": {
+                "id": task.task_id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete
+            }
+        }), 200)
+    else:
+        abort(make_response({"details":"Invalid request"}, 400))
+
 
 @tasks_bp.route("/<task_id>", methods=["DELETE"])
 def delete_task(task_id):
