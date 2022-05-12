@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, make_response, request, abort
 from sqlalchemy import desc
 from datetime import datetime
 from .requests import use_header
+from app.models.goal import Goal
 
 tasks_bp = Blueprint("tasks_blueprint", __name__, url_prefix="/tasks")
 def validate_task(task_id):
