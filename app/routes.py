@@ -143,13 +143,7 @@ def individual_task(task_id):
     except:
         abort(make_response({"details":"Invalid data"}, 404))
     task = Task.query.get(task_id)
-    return { "task": {
-            "id": task.task_id,
-            "title": task.title,
-            "description": task.description,
-            "is_complete": task.is_complete
-        }
-    }
+    return {"task": task.to_dict()}
 
 @goals_bp.route("/<goal_id>", methods=["GET"])
 def individual_goal(goal_id):
@@ -308,3 +302,31 @@ def delete_goal(goal_id):
     db.session.commit()
 
     return make_response({"details": f'Goal {goal_id} "{goal.title}" successfully deleted'})
+
+
+
+@goals_bp.route("/<goal_id>/tasks", methods=["GET"])
+def individual_goal_with_tasks(goal_id):
+    try:
+        validate_goal(goal_id)
+    except:
+        abort(make_response({"details":"Invalid data"}, 404))
+    goal = Goal.query.get(goal_id)
+    return goal.to_dict()
+
+
+@goals_bp.route("/<goal_id>/tasks", methods=["POST"])
+def create_goal_with_tasks(goal_id):
+    request_body = request.get_json()
+    try:
+        validate_goal(goal_id)
+    except:
+        abort(make_response({"details":"Invalid data"}, 404))
+    
+    for task_id in request_body["task_ids"]:
+        task = Task.query.get(task_id)
+        task.goal_id = goal_id
+    db.session.commit()
+
+    goal= Goal.query.get(goal_id)
+    return goal.to_dict_ids_only()
